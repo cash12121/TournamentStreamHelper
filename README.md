@@ -13,7 +13,7 @@ This layout can found in `layout/scoreboard/lor.html` for use in browser for OBS
 </details>
 
 # Quick Start Guide
-1. Download the latest release zip: [Download]()
+1. Download the latest release zip: [Download](https://github.com/cash12121/TournamentStreamHelper/releases)
 2. Extract the zip
 3. Run the program
     * **Windows:** Open `TSH.exe`
