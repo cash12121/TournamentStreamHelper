@@ -6,10 +6,11 @@ A Stream helper for fighting game tournaments!
 
 This fork is made to have a layout included for Legends of Runeterra.  
 This layout can found in `layout/scoreboard/lor.html` for use in browser for OBS. (or respective broadcasting software).
-
-### Image Preview:
+<details>
+<summary>Image Preview</summary>
 
 ![Layout-Preview](https://user-images.githubusercontent.com/15186707/177460136-0842fb95-34f8-418a-9133-f3a889757240.png)
+</details>
 
 # Quick Start Guide
 1. Download the latest release zip: [Download]()
@@ -23,8 +24,12 @@ This layout can found in `layout/scoreboard/lor.html` for use in browser for OBS
 
 ## How to load regions in the overlay?
 Just set `Characters per Player` to 2 then under the players choose the region *[left most box]* for each set of boxes.  
-![image](https://user-images.githubusercontent.com/15186707/177460202-92a55ff8-91b8-49af-abc8-e92e210bf8a2.png)
 
+<details>
+<summary>Image Preview</summary>
+
+![image](https://user-images.githubusercontent.com/15186707/177460202-92a55ff8-91b8-49af-abc8-e92e210bf8a2.png)
+</details>
 
 # For developers
 
