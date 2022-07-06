@@ -5,7 +5,11 @@ A Stream helper for fighting game tournaments!
 # Legends of Runeterra Layout Fork Info
 
 This fork is made to have a layout included for Legends of Runeterra.  
-This layout can found in `layout/scoreboard/lor.html` for use in browser for OBS. (or respective broadcasting software).  
+This layout can found in `layout/scoreboard/lor.html` for use in browser for OBS. (or respective broadcasting software).
+
+### Image Preview:
+
+![image]()
 
 # Quick Start Guide
 1. Download the latest release zip: [Download]()
@@ -16,6 +20,9 @@ This layout can found in `layout/scoreboard/lor.html` for use in browser for OBS
 
 ## To get Legends of Runeterra asssets like Region icons 
 * Download via [asset downloader](https://github.com/joaorb64/TournamentStreamHelper/wiki/Quickstart#download-game-assets) and you should find it under **Legends of Runeterra**
+
+## How to load regions in the overlay?
+Just set `Characters per Player` to 2 then under the players choose the region *[left most box]* for each set of boxes.
 
 # For developers
 
