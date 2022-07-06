@@ -9,7 +9,7 @@ This layout can found in `layout/scoreboard/lor.html` for use in browser for OBS
 
 ### Image Preview:
 
-![image]()
+![Layout-Preview](https://user-images.githubusercontent.com/15186707/177460136-0842fb95-34f8-418a-9133-f3a889757240.png)
 
 # Quick Start Guide
 1. Download the latest release zip: [Download]()
@@ -22,7 +22,9 @@ This layout can found in `layout/scoreboard/lor.html` for use in browser for OBS
 * Download via [asset downloader](https://github.com/joaorb64/TournamentStreamHelper/wiki/Quickstart#download-game-assets) and you should find it under **Legends of Runeterra**
 
 ## How to load regions in the overlay?
-Just set `Characters per Player` to 2 then under the players choose the region *[left most box]* for each set of boxes.
+Just set `Characters per Player` to 2 then under the players choose the region *[left most box]* for each set of boxes.  
+![image](https://user-images.githubusercontent.com/15186707/177460202-92a55ff8-91b8-49af-abc8-e92e210bf8a2.png)
+
 
 # For developers
 
