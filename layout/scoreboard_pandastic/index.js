@@ -67,14 +67,31 @@
           if (player) {
             SetInnerHtml(
               $(`.p${t + 1}.container .name`),
+              // For p2, place pronoun before name
+              // For p1, place pronoun after name
               `
+                ${
+                  t == 1
+                    ? `
+                    <span class="pronoun">
+                      ${player.pronoun ? player.pronoun : ""}
+                    </span>
+                  `
+                    : ""
+                }
                 <span class="sponsor">
                   ${player.team ? player.team : ""}
                 </span>
                 ${player.name}
-                <span class="pronoun">
-                  ${player.pronoun ? player.pronoun : ""}
-                </span>
+                ${
+                  t == 0
+                    ? `
+                    <span class="pronoun">
+                      ${player.pronoun ? player.pronoun : ""}
+                    </span>
+                  `
+                    : ""
+                }
                 ${team.losers ? "<span class='losers'>L</span>" : ""}
               `
             );
