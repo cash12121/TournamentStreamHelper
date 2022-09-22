@@ -118,6 +118,9 @@ class TSHScoreboardStageWidget(QWidget):
             QApplication.translate("app", "Open {0} in a browser to stage strike.").format(f"<a href='http://{self.GetIP()}:5000'>http://{self.GetIP()}:5000</a>"))
         self.webappLabel.setOpenExternalLinks(True)
 
+        self.labelValidation = self.findChild(QLabel, "labelValidation")
+        self.labelValidation.setText("")
+
         self.signals.rulesets_changed.connect(self.LoadRulesets)
         self.LoadStartggRulesets()
         self.LoadRuleset()
@@ -421,7 +424,24 @@ class TSHScoreboardStageWidget(QWidget):
 
     def ExportCurrentRuleset(self):
         ruleset = self.GetCurrentRuleset()
+        self.ValidateRuleset(ruleset)
         StateManager.Set(f"score.ruleset", vars(ruleset))
+    
+    def ValidateRuleset(self, ruleset: Ruleset):
+        issues = []
+
+        # Validate bans
+        if len(ruleset.neutralStages) > 0:
+            if sum(ruleset.strikeOrder) != len(ruleset.neutralStages) - 1:
+                remaining = (len(ruleset.neutralStages) - 1) - sum(ruleset.strikeOrder)
+                issues.append(QApplication.translate("app", "Number striked stages does not match the number of neutral stages. Should strike {0} more stage(s).").format(remaining))
+
+        if len(issues) == 0:
+            validText = QApplication.translate("app", "The current ruleset is valid!")
+            self.labelValidation.setText(f"<span style='color: green'>{validText}</span>")
+        else:
+            issuesText = "\n".join(issues)
+            self.labelValidation.setText(f'<span style="color: red">{issuesText}</span>')
 
     def GetCurrentRuleset(self, forSaving=False):
         ruleset = Ruleset()
@@ -475,14 +495,26 @@ class TSHScoreboardStageWidget(QWidget):
         try:
             class DownloadThread(QThread):
                 def run(self):
-                    data = requests.get(
-                        "https://www.start.gg/api/-/gg_api./rulesets"
-                    )
-                    data = json.loads(data.text)
-                    rulesets = deep_get(data, "entities.ruleset")
-                    self.parent().startggRulesets = rulesets
-                    print("startgg Rulesets loaded")
-                    self.parent().signals.rulesets_changed.emit()
+                    try:
+                        data = requests.get(
+                            "https://www.start.gg/api/-/gg_api./rulesets"
+                        )
+                        data = json.loads(data.text)
+                        rulesets = deep_get(data, "entities.ruleset")
+                        open('./assets/rulesets.json', 'w').write(json.dumps(rulesets))
+                        self.parent().startggRulesets = rulesets
+                        print("startgg Rulesets downloaded from startgg")
+                        self.parent().signals.rulesets_changed.emit()
+                    except:
+                        print(traceback.format_exc())
+
+                        try:
+                            rulesets = json.loads(open('./assets/rulesets.json').read())
+                            self.parent().startggRulesets = rulesets
+                            print("startgg Rulesets loaded from local file")
+                            self.parent().signals.rulesets_changed.emit()
+                        except:
+                            print(traceback.format_exc())
             downloadThread = DownloadThread(self)
             downloadThread.start()
         except Exception as e:
