@@ -6,6 +6,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5 import uic
 
+from src.TSHSelectSetWindow import TSHSelectSetWindow
+
 from .TSHScoreboardPlayerWidget import *
 from .SettingsManager import *
 from .StateManager import *
@@ -19,6 +21,9 @@ from .TSHThumbnailSettingsWidget import *
 class TSHScoreboardWidgetSignals(QObject):
     UpdateSetData = pyqtSignal(object)
     NewSetSelected = pyqtSignal(object)
+    SetSelection = pyqtSignal()
+    StreamSetSelection = pyqtSignal()
+    UserSetSelection = pyqtSignal()
 
 
 class TSHScoreboardWidget(QDockWidget):
@@ -26,10 +31,17 @@ class TSHScoreboardWidget(QDockWidget):
         super().__init__(*args)
 
         StateManager.Set("score", {})
+        StateManager.Set("score.last_sets.1", {})
+        StateManager.Set("score.last_sets.2", {})
+        StateManager.Set("score.history_sets.1", {})
+        StateManager.Set("score.history_sets.2", {})
 
         self.signals = TSHScoreboardWidgetSignals()
         self.signals.UpdateSetData.connect(self.UpdateSetData)
         self.signals.NewSetSelected.connect(self.NewSetSelected)
+        self.signals.SetSelection.connect(self.LoadSetClicked)
+        self.signals.StreamSetSelection.connect(self.LoadStreamSetClicked)
+        self.signals.UserSetSelection.connect(self.LoadUserSetClicked)
 
         self.lastSetSelected = None
 
@@ -43,25 +55,17 @@ class TSHScoreboardWidget(QDockWidget):
         self.setWidget(self.widget)
         self.widget.setLayout(QVBoxLayout())
 
-        self.tabs = QTabWidget()
-        self.widget.layout().addWidget(self.tabs)
-
-        self.tabScore = QWidget()
+        self.innerWidget = QWidget()
+        self.innerWidget.setLayout(QVBoxLayout())
 
         self.scrollArea = QScrollArea()
-        self.scrollArea.setWidget(self.tabScore)
+        self.scrollArea.setWidget(self.innerWidget)
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setFrameShape(QFrame.Shape.NoFrame)
         self.scrollArea.setStyleSheet(
             "QTabWidget::pane { margin: 0px,0px,0px,0px }")
-
-        self.tabScore.setLayout(QVBoxLayout())
-        self.tabs.addTab(
-            self.scrollArea, QApplication.translate("app", "Score"))
-        self.tabStage = QWidget()
-        self.tabStage.setLayout(QVBoxLayout())
-        self.tabs.addTab(self.tabStage, QApplication.translate("app", "Stage"))
-        self.tabStage.layout().addWidget(TSHScoreboardStageWidget(scoreboard=self))
+        
+        self.widget.layout().addWidget(self.scrollArea)
 
         # StateManager.Set("score", {})
 
@@ -74,7 +78,7 @@ class TSHScoreboardWidget(QDockWidget):
         topOptions.layout().setContentsMargins(0, 0, 0, 0)
         topOptions.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
 
-        self.tabScore.layout().addWidget(topOptions)
+        self.innerWidget.layout().addWidget(topOptions)
 
         col = QWidget()
         col.setLayout(QVBoxLayout())
@@ -161,21 +165,21 @@ class TSHScoreboardWidget(QDockWidget):
 
         self.columns = QWidget()
         self.columns.setLayout(QHBoxLayout())
-        self.tabScore.layout().addWidget(self.columns)
+        self.innerWidget.layout().addWidget(self.columns)
 
         bottomOptions = QWidget()
         bottomOptions.setLayout(QVBoxLayout())
         bottomOptions.layout().setContentsMargins(0, 0, 0, 0)
         bottomOptions.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
 
-        self.tabScore.layout().addWidget(bottomOptions)
+        self.innerWidget.layout().addWidget(bottomOptions)
 
         self.btSelectSet = QPushButton(
             QApplication.translate("app", "Load set"))
         self.btSelectSet.setIcon(QIcon("./assets/icons/list.svg"))
         self.btSelectSet.setEnabled(False)
         bottomOptions.layout().addWidget(self.btSelectSet)
-        self.btSelectSet.clicked.connect(self.LoadSetClicked)
+        self.btSelectSet.clicked.connect(self.signals.SetSelection.emit)
 
         hbox = QHBoxLayout()
         bottomOptions.layout().addLayout(hbox)
@@ -185,7 +189,7 @@ class TSHScoreboardWidget(QDockWidget):
         self.btLoadStreamSet.setIcon(QIcon("./assets/icons/twitch.svg"))
         self.btLoadStreamSet.setEnabled(False)
         hbox.addWidget(self.btLoadStreamSet)
-        self.btLoadStreamSet.clicked.connect(self.LoadStreamSetClicked)
+        self.btLoadStreamSet.clicked.connect(self.signals.StreamSetSelection.emit)
         TSHTournamentDataProvider.instance.signals.twitch_username_updated.connect(
             self.UpdateStreamButton)
 
@@ -204,7 +208,7 @@ class TSHScoreboardWidget(QDockWidget):
         self.btLoadPlayerSet = QPushButton("Load player set")
         self.btLoadPlayerSet.setIcon(QIcon("./assets/icons/person_search.svg"))
         self.btLoadPlayerSet.setEnabled(False)
-        self.btLoadPlayerSet.clicked.connect(self.LoadUserSetClicked)
+        self.btLoadPlayerSet.clicked.connect(self.signals.UserSetSelection.emit)
         hbox.addWidget(self.btLoadPlayerSet)
         TSHTournamentDataProvider.instance.signals.user_updated.connect(
             self.UpdateUserSetButton)
@@ -223,6 +227,8 @@ class TSHScoreboardWidget(QDockWidget):
         TSHTournamentDataProvider.instance.signals.tournament_changed.connect(
             self.UpdateBottomButtons)
         TSHTournamentDataProvider.instance.signals.tournament_changed.emit()
+
+        self.selectSetWindow = TSHSelectSetWindow(self)
 
         self.timerLayout = QWidget()
         self.timerLayout.setLayout(QHBoxLayout())
@@ -359,6 +365,12 @@ class TSHScoreboardWidget(QDockWidget):
         TSHTournamentDataProvider.instance.signals.recent_sets_updated.connect(
             self.UpdateRecentSets)
 
+        TSHTournamentDataProvider.instance.signals.last_sets_updated.connect(
+            self.UpdateLastSets)
+
+        TSHTournamentDataProvider.instance.signals.history_sets_updated.connect(
+            self.UpdateHistorySets)
+
         # Add default and user tournament phase title files
         self.scoreColumn.findChild(QComboBox, "phase").addItem("")
         default_tournament_phases_file = './assets/tournament_phases.txt'
@@ -419,7 +431,7 @@ class TSHScoreboardWidget(QDockWidget):
             msgBox.setIcon(QMessageBox.Information)
             msgBox.setInformativeText(thumbnailPath)
 
-            thumbnail_settings = SettingsManager.Get("thumbnail")
+            thumbnail_settings = SettingsManager.Get("thumbnail_config")
             if thumbnail_settings.get("open_explorer"):
                 outThumbDir = f"{os.getcwd()}/out/thumbnails/"
                 if platform.system() == "Windows":
@@ -480,6 +492,8 @@ class TSHScoreboardWidget(QDockWidget):
                 self.team1playerWidgets[index+1 if index < len(self.team1playerWidgets) - 1 else index]))
 
             p.instanceSignals.playerId_changed.connect(self.GetRecentSets)
+            p.instanceSignals.player1Id_changed.connect(self.GetLastSetsP1)
+            p.instanceSignals.player1Id_changed.connect(self.GetHistorySetsP1)
 
             self.team1playerWidgets.append(p)
 
@@ -500,6 +514,8 @@ class TSHScoreboardWidget(QDockWidget):
                 self.team2playerWidgets[index+1 if index < len(self.team2playerWidgets) - 1 else index]))
 
             p.instanceSignals.playerId_changed.connect(self.GetRecentSets)
+            p.instanceSignals.player2Id_changed.connect(self.GetLastSetsP2)
+            p.instanceSignals.player2Id_changed.connect(self.GetHistorySetsP2)
 
             self.team2playerWidgets.append(p)
 
@@ -596,6 +612,8 @@ class TSHScoreboardWidget(QDockWidget):
 
         self.teamsSwapped = not self.teamsSwapped
 
+        StateManager.Set(f"score.teamsSwapped", self.teamsSwapped)
+
         StateManager.ReleaseSaving()
 
     def GetRecentSets(self):
@@ -627,6 +645,81 @@ class TSHScoreboardWidget(QDockWidget):
                 "sets": data.get("sets"),
                 "request_time": data.get("request_time")
             })
+    
+    def GetLastSetsP1(self):
+        # Only if 1 player on each side
+        if len(self.team1playerWidgets) == 1 and TSHTournamentDataProvider.instance and TSHTournamentDataProvider.instance.provider.name == "StartGG":
+            p1id = StateManager.Get(f"score.team.1.player.1.id")
+            if p1id:
+                TSHTournamentDataProvider.instance.GetLastSets(p1id, "1")
+            else:
+                StateManager.Set(f"score.last_sets.1", {})
+    
+    def GetLastSetsP2(self):
+        # Only if 1 player on each side
+        if len(self.team1playerWidgets) == 1 and TSHTournamentDataProvider.instance and TSHTournamentDataProvider.instance.provider.name == "StartGG":
+            p2id = StateManager.Get(f"score.team.2.player.1.id")
+            if p2id:
+                TSHTournamentDataProvider.instance.GetLastSets(p2id, "2")
+            else:
+                StateManager.Set(f"score.last_sets.2", {})
+    
+    def UpdateLastSets(self, data):
+        StateManager.BlockSaving()
+        i = 1
+        winner = ""
+        loser = ""
+        for set in data.get("last_sets", []):
+            if set.get("player1_score") > set.get("player2_score"):
+                winner = "player1"
+                loser = "player2"
+            else:
+                winner = "player2"
+                loser = "player1"
+            StateManager.Set(f"score.last_sets." + data.get("playerNumber") + "." + str(i), {
+                "phase_id": set.get("phase_id"),
+                "phase_name": set.get("phase_name"),
+                "round_name": set.get("round_name"),
+                "winner_score": set.get(winner + "_score"),
+                "loser_score": set.get(loser + "_score"),
+                "winner_team": set.get(winner + "_team"),
+                "winner_name": set.get(winner + "_name"),
+                "loser_team": set.get(loser + "_team"),
+                "loser_name": set.get(loser + "_name")
+            })
+            i+=1
+        StateManager.ReleaseSaving()
+    
+    def GetHistorySetsP1(self):
+        # Only if 1 player on each side
+        if len(self.team1playerWidgets) == 1 and TSHTournamentDataProvider.instance and TSHTournamentDataProvider.instance.provider.name == "StartGG":
+            p1id = StateManager.Get(f"score.team.1.player.1.id")
+            if p1id:
+                TSHTournamentDataProvider.instance.GetHistorySets(p1id, "1", StateManager.Get(f"game.smashgg_id"))
+            else:
+                StateManager.Set(f"score.history_sets.1", {})
+    
+    def GetHistorySetsP2(self):
+        # Only if 1 player on each side
+        if len(self.team1playerWidgets) == 1 and TSHTournamentDataProvider.instance and TSHTournamentDataProvider.instance.provider.name == "StartGG":
+            p2id = StateManager.Get(f"score.team.2.player.1.id")
+            if p2id:
+                TSHTournamentDataProvider.instance.GetHistorySets(p2id, "2", StateManager.Get(f"game.smashgg_id"))
+            else:
+                StateManager.Set(f"score.history_sets.2", {})
+    
+    def UpdateHistorySets(self, data):
+        StateManager.BlockSaving()
+        i = 1
+        for set in data.get("history_sets", []):
+            StateManager.Set(f"score.history_sets." + data.get("playerNumber") + "." + str(i), {
+                "placement": set.get("placement"),
+                "event_name": set.get("event_name"),
+                "tournament_name": set.get("tournament_name"),
+                "tournament_picture": set.get("tournament_picture")
+            })
+            i+=1
+        StateManager.ReleaseSaving()
 
     def ResetScore(self):
         self.scoreColumn.findChild(QSpinBox, "score_left").setValue(0)
@@ -691,8 +784,8 @@ class TSHScoreboardWidget(QDockWidget):
                 str(int(self.autoUpdateTimer.remainingTime()/1000)))
 
     def LoadSetClicked(self):
-        self.lastSetSelected = None
-        TSHTournamentDataProvider.instance.LoadSets(self)
+        self.selectSetWindow.LoadSets()
+        self.selectSetWindow.show()
 
     def LoadStreamSetClicked(self):
         self.lastSetSelected = None
@@ -821,3 +914,4 @@ class TSHScoreboardWidget(QDockWidget):
 
         if data.get("stage_strike"):
             StateManager.Set(f"score.stage_strike", data.get("stage_strike"))
+            StateManager.Set(f"score.ruleset", data.get("ruleset"))

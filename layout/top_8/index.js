@@ -1,15 +1,4 @@
 ;(($) => {
-  var ASSET_TO_USE_1ST = 'full'
-  var ZOOM_1ST = 1
-
-  var ASSET_TO_USE_2_to_4 = 'full'
-  var ZOOM_2_to_4 = 1
-
-  var ASSET_TO_USE_5_to_7 = 'full'
-  var ZOOM_5_to_7 = 1
-  
-  var DIVIDERS = true
-
   gsap.config({ nullTargetWarn: false, trialWarn: false })
 
   let startingAnimation = gsap
@@ -26,6 +15,48 @@
   async function Update() {
     oldData = data
     data = await getData()
+
+    if(data.game){
+      if (data.game.codename == "ssbu") {
+        var ASSET_TO_USE_1ST = 'chara3'
+        var ZOOM_1ST = 1.2
+
+        var ASSET_TO_USE_2_to_4 = 'chara3'
+        var ZOOM_2_to_4 = 1.2
+
+        var ASSET_TO_USE_5_to_7 = 'chara3'
+        var ZOOM_5_to_7 = 1.2
+      } else if (data.game.codename == "ssbm") {
+        var ASSET_TO_USE_1ST = 'portrait_hd'
+        var ZOOM_1ST = 1.2
+
+        var ASSET_TO_USE_2_to_4 = 'portrait_hd'
+        var ZOOM_2_to_4 = 1.2
+
+        var ASSET_TO_USE_5_to_7 = 'portrait_hd'
+        var ZOOM_5_to_7 = 1.2
+      } else if (data.game.codename == "ssb64") {
+        var ASSET_TO_USE_1ST = 'artwork'
+        var ZOOM_1ST = 1.2
+
+        var ASSET_TO_USE_2_to_4 = 'artwork'
+        var ZOOM_2_to_4 = 1.2
+
+        var ASSET_TO_USE_5_to_7 = 'artwork'
+        var ZOOM_5_to_7 = 1.2
+      } else {
+        var ASSET_TO_USE_1ST = 'full'
+        var ZOOM_1ST = 1.2
+
+        var ASSET_TO_USE_2_to_4 = 'full'
+        var ZOOM_2_to_4 = 1.2
+
+        var ASSET_TO_USE_5_to_7 = 'full'
+        var ZOOM_5_to_7 = 1.2
+      }
+      
+      var DIVIDERS = true
+    }
 
     if (
       !oldData.player_list ||
@@ -140,7 +171,7 @@
                 let centering = [0.5, 0.4]
 
                 // If not using dividers, calculate proper placement for each character
-                if(!DIVIDERS) GenerateMulticharacterPositions(validCharacters.length)[index]
+                if(!DIVIDERS) centering = GenerateMulticharacterPositions(validCharacters.length)[index]
 
                 charactersHtml += `
                   <div class="icon stockicon ${DIVIDERS ? "divided" : ""}">
@@ -149,21 +180,9 @@
                           background-image: url(../../${character.assets[ASSET_TO_USE].asset});
                           z-index: ${validCharacters.length - index}
                         '
-                        data-eyesight-x='${
-                          character.assets[ASSET_TO_USE].eyesight
-                            ? character.assets[ASSET_TO_USE].eyesight.x
-                            : null
-                        }'
-                        data-eyesight-y='${
-                          character.assets[ASSET_TO_USE].eyesight
-                            ? character.assets[ASSET_TO_USE].eyesight.y
-                            : null
-                        }'
+                        data-asset='${JSON.stringify(character.assets[ASSET_TO_USE])}'
                         data-centering-x='${centering[0]}'
                         data-centering-y='${centering[1]}'
-                        data-uncropped-edge='${JSON.stringify(
-                          character.assets[ASSET_TO_USE].uncropped_edge
-                        )}'
                         data-zoom='${ZOOM}'
                       >
                       </div>
@@ -181,14 +200,12 @@
                   `.slot${t + 1} .p${p + 1}.container .character_container .icon.stockicon div`
                 ).each((e, i) => {
                   if (player.character[e + 1].assets[ASSET_TO_USE] != null) {
-                    console.log(i)
                     CenterImage(
                       $(i),
-                      { x: $(i).attr('data-eyesight-x'), y: $(i).attr('data-eyesight-y') },
+                      $(i).attr('data-asset'),
                       $(i).attr('data-zoom'),
                       { x: $(i).attr('data-centering-x'), y: $(i).attr('data-centering-y') },
-                      $(i).parent().parent(),
-                      $(i).attr('data-uncropped-edge') != "undefined" ? JSON.parse($(i).attr('data-uncropped-edge')) : undefined
+                      $(i).parent().parent()
                     )
                   }
                 })

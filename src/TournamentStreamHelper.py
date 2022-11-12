@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from src.TSHWebServer import WebServer
 from .Helpers.TSHLocaleHelper import TSHLocaleHelper
 import shutil
 import tarfile
@@ -163,6 +164,16 @@ class Window(QMainWindow):
             Qt.DockWidgetArea.BottomDockWidgetArea, self.scoreboard)
         self.dockWidgets.append(self.scoreboard)
 
+        self.stageWidget = TSHScoreboardStageWidget()
+        self.stageWidget.setObjectName(
+            QApplication.translate("app", "Stage"))
+        self.addDockWidget(
+            Qt.DockWidgetArea.BottomDockWidgetArea, self.stageWidget)
+        self.dockWidgets.append(self.stageWidget)
+        
+        self.webserver = WebServer(parent=None, scoreboard=self.scoreboard, stageWidget=self.stageWidget)
+        self.webserver.start()
+
         commentary = TSHCommentaryWidget()
         commentary.setWindowIcon(QIcon('assets/icons/mic.svg'))
         commentary.setObjectName(QApplication.translate("app", "Commentary"))
@@ -175,6 +186,7 @@ class Window(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, playerList)
         self.dockWidgets.append(playerList)
 
+        self.tabifyDockWidget(self.scoreboard, self.stageWidget)
         self.tabifyDockWidget(self.scoreboard, commentary)
         self.tabifyDockWidget(self.scoreboard, tournamentInfo)
         self.tabifyDockWidget(self.scoreboard, thumbnailSetting)
@@ -266,6 +278,7 @@ class Window(QMainWindow):
             "app", "Toggle widgets") + menu_margin, self.optionsBt.menu())
         self.optionsBt.menu().addMenu(toggleWidgets)
         toggleWidgets.addAction(self.scoreboard.toggleViewAction())
+        toggleWidgets.addAction(self.stageWidget.toggleViewAction())
         toggleWidgets.addAction(commentary.toggleViewAction())
         toggleWidgets.addAction(thumbnailSetting.toggleViewAction())
         toggleWidgets.addAction(tournamentInfo.toggleViewAction())
@@ -647,6 +660,9 @@ class Window(QMainWindow):
                 p = QPainter(baseIcon)
                 p.drawImage(QPoint(20, 0), updateIcon)
                 p.end()
+                self.downloadAssetsAction.setIcon(QIcon(baseIcon))
+            else:
+                baseIcon = self.downloadAssetsAction.icon().pixmap(32, 32)
                 self.downloadAssetsAction.setIcon(QIcon(baseIcon))
         except:
             print(traceback.format_exc())
